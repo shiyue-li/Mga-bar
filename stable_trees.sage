@@ -15,22 +15,26 @@ def assign_weights(T, w):
     output: all possible weightings on T with w.
     '''
 
-    S = Permutations(len(w))
-    vert_dic = T.get_vertices()
-    weighted_trees = []
+    # Check leaf counts match weight vector length.
+    if T.degree().count(1) != len(w):
+        raise Warning('Weight vector length must match leaf count.')
+    else:
+        S = Permutations(len(w))
+        vert_dic = T.get_vertices()
+        leaf_indexes = [i for i, x in enumerate(T.degree()) if x == 1]
 
-    # Assign weight to leaves while permuting the weight vector entries.
-    # If a vertex is a leaf, assign a weight to the vertex;
-    for perm in S:
-        permed_w = perm.action(w)
-        index = 0
-        new_vert_dic = {}
-        for v in vert_dic:
-            if v.degree() == 1:
-                new_vert_dic[v] = permed_w[index]
+        weighted_trees = []
+        # Assign weight to leaves while permuting the weight vector entries.
+        # If a vertex is a leaf, assign a weight to the vertex;
+        for perm in S:
+            permed_w = perm.action(w)
+            index = 0
+            new_vert_dic = {}
+            for x in leaf_indexes:
+                new_vert_dic[x] = permed_w[index]
                 index += 1
-        weighted_trees.append(new_vert_dic)
-    return weighted_trees
+            weighted_trees.append(new_vert_dic)
+        return T, weighted_trees
 
 def assign_weights_to_forest(trees, w):
     '''
