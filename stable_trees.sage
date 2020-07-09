@@ -8,6 +8,12 @@ def count_trees(trees):
         count += 1
     return count
 
+def count_leaves(trees):
+    '''
+    input: an iterator containing trees.
+    output: an iterator containing leaf counts of the trees.
+    '''
+    return [T.degree().count(1) for T in trees]
 
 def assign_weights(T, w):
     '''
@@ -20,21 +26,20 @@ def assign_weights(T, w):
         raise Warning('Weight vector length must match leaf count.')
     else:
         S = Permutations(len(w))
-        vert_dic = T.get_vertices()
         leaf_indexes = [i for i, x in enumerate(T.degree()) if x == 1]
 
-        weighted_trees = []
         # Assign weight to leaves while permuting the weight vector entries.
-        # If a vertex is a leaf, assign a weight to the vertex;
-        for perm in S:
-            permed_w = perm.action(w)
-            index = 0
-            new_vert_dic = {}
-            for x in leaf_indexes:
-                new_vert_dic[x] = permed_w[index]
-                index += 1
-            weighted_trees.append(new_vert_dic)
-        return T, weighted_trees
+        return [T.relabel(new_label(len(w), leaf_indexes, w, perm), inplace=False) for perm in S]
+
+
+def new_label(leaf_counts, leaf_indexes, w, perm):
+    '''
+    input: a leaf count, an iterator containing leaf indexes, a weight vector, a permutation.
+    output: an iterator of new labels using weight vector permuted by perm.
+    '''
+    new_w = perm.action(w)
+    print(new_w)
+    return [new_w[leaf_indexes.index(i)] if i in leaf_indexes else None for i in range(leaf_counts)]
 
 def assign_weights_to_forest(trees, w):
     '''
