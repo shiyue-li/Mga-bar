@@ -50,18 +50,14 @@ def assign_weights(T, w):
         raise Warning('Weight vector length must match leaf count.')
     else:
         weighted_trees = []
-        print('assigning...')
         S = Permutations(len(w))
         leaf_indexes = [i for i, x in enumerate(T.degree()) if x == 1]
-        print('leaf index', leaf_indexes)
         for perm in S:
             label = new_label(len(T.get_vertices()),leaf_indexes, w, perm)
-            print('new label', label)
             new_T = T
             for i in range(len(label)):
                 print('index', i, 'label', label[i])
                 new_T.set_vertex(i, label[i])
-            print('new tree', new_T.get_vertices())
             weighted_trees.append(new_T)
         # Assign weight to leaves while permuting the weight vector entries.
         return weighted_trees
@@ -122,6 +118,15 @@ def neighbor_labels(v, weighted_tree):
     vert_dic = weighted_tree.get_vertices()
     nbhrs = weighted_tree.neighbors(v)
     return [vert_dic[u] if vert_dic[u] != None else 1 for u in nbhrs]
+
+def chop_same_trees(F):
+    '''
+    input: a forest F.
+    output: a forest F' with duplicates removed.
+    '''
+    immutables = [x.copy(immutable=True) for x in F]
+    new_F = list(dict.fromkeys(immutables))
+    return new_F
 
 ### CREATE OF STABLE TREES OF A GIVEN WEIGHT###
 # Note:
