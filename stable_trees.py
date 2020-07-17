@@ -20,6 +20,7 @@ def count_leaves(trees):
     '''
     counts = []
     for T in trees:
+        print(T)
         counts.append(T.degree().count(1))
     L =  [T for T in trees]
     return counts
@@ -77,12 +78,31 @@ F3 = TreeIterator(3)
 F4 = TreeIterator(4)
 
 
-def n_marked_trees(trees, n):
+def chop_trees(trees, n):
     '''
     input: a list of trees, an integer n
     output: trees of n leaves.
+
+    (chop trees that do not have exactly n leaves)
     '''
-    return [x.degree().count(1) for x in trees]
+    n_leaf_forest = []
+    for T in trees:
+        if T.degree().count(1) == n:
+            n_leaf_forest.append(T)
+    return n_leaf_forest
+
+def n_leaf_trees(L):
+    '''
+    input: an integer L.
+    output: an Iterator of trees with precisely n leaves.
+    '''
+    forest = []
+    for V in range(1, 2*L-1):
+        trees = TreeIterator(V)
+        for T in trees:
+            forest.append(T)
+    n_leaf_trees = chop_trees(forest, L)
+    return n_leaf_trees
 
 def neighbor_labels(v, weighted_tree):
     '''
@@ -106,6 +126,6 @@ def is_stable(T):
         leaf_indexes = [i for i, x in enumerate(T.degree()) if x == 1]
         neighbors_of_everybody = [neighbor_labels(v, T) for v in T.get_vertices()]
         print(neighbors_of_everybody)
-        neighbors_of_internals = [N if (len(N) > 1) for N in neighbors_of_everybody]
-        stable = [sum(N) > 2 for N in neighbors_of_internals]
-        return all(stable)
+        # neighbors_of_internals = [N if (len(N) > 1) for N in neighbors_of_everybody]
+        # stable = [sum(N) > 2 for N in neighbors_of_internals]
+        # return all(stable)
