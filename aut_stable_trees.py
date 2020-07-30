@@ -38,16 +38,12 @@ def _get_vertices(weights):
 def are_connected(subset1, subset2, n):
     # edges: S ~ T iff S < T or S < T^c or T < S or T^c < S
 
-    subset1 = set(subset1)
-    subset1_comp = set(get_complement(subset1, n))
-    subset2 = set(subset2)
-    subset2_comp = set(get_complement(subset2, n))
+    S = set(subset1)
+    S_comp = set(get_complement(subset1, n))
+    T = set(subset2)
+    T_comp = set(get_complement(subset2, n))
 
-    if subset1 < subset2 or subset1 < subset2_comp:
-        return True
-    elif subset2 < subset1 or subset2 < subset1_comp:
-        return True
-    return False
+    return any((S < T, S < T_comp, T_comp < S, T < S))
 
 
 def build_graph(weights):
@@ -89,15 +85,14 @@ def compare_automorphism_groups(n):
     print(f"All clear for n={n}")
 
 if __name__ == "__main__":
-    weights = [1/10, 1/10, 1/4, 1/3, 1/2, 1]
+    weights = [1 / 10, 1 / 10, 1 / 4, 1 / 3, 1 / 2, 1]
     G = build_graph(weights)
-    print(G.vertices(), G.edges())
     K = build_complex(weights)
-    print(K.faces())
-    G.plot().show()
+
+    print(G.edges())
 
     aut_G = G.automorphism_group()
     aut_K = K.automorphism_group()
 
     are_isomorphic = aut_G.is_isomorphic(aut_K)
-    print(are_isomorphic)   
+    print(are_isomorphic)
