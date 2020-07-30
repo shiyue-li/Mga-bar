@@ -10,6 +10,7 @@ def powerset(iterable):
     return itertools.chain.from_iterable(itertools.combinations(s, r)
                                          for r in range(len(s) + 1))
 
+
 def sum_weighted(subset, weights):
     return sum(weights[i] for i in subset)
 
@@ -23,14 +24,15 @@ def is_valid_subset(subset, weights):
 
     sum_subset = sum_weighted(subset, weights)
     sum_complement = sum_weighted(complement, weights)
-    
+
     return sum_subset > 1 and sum_complement > 1 and subset < complement
 
 
 def _get_vertices(weights):
     n = len(weights)
 
-    return set(subset for subset in powerset(range(n)) if is_valid_subset(subset, weights))
+    return [subset for subset in powerset(range(n))
+            if is_valid_subset(subset, weights)]
 
 
 def are_connected(subset1, subset2, n):
@@ -51,9 +53,9 @@ def are_connected(subset1, subset2, n):
 def build_graph(weights):
     vertices = _get_vertices(weights)
 
-    return Graph({subset1: [subset2 for subset2 in enumerate(vertices)
+    return Graph({subset1: [subset2 for subset2 in vertices
                             if are_connected(subset1, subset2, len(weights))]
-                  for subset1 in enumerate(vertices)})
+                  for subset1 in vertices})
 
 
 def build_complex(weights):
@@ -82,15 +84,20 @@ def compare_automorphism_groups(n):
         aut_complex = K.automorphism_group()
 
         if G.size() > 0 and not aut_graph.is_isomorphic(aut_complex):
-            print(f"{weights} is a counter-example")
-            print(f"|Aut(G)|={aut_graph.order()}, |Aut(K)|={aut_complex.order()}")
-            return
+            return weights
 
     print(f"All clear for n={n}")
 
-
 if __name__ == "__main__":
-    counter_example = [QQ(1 / 4), QQ(1 / 3), QQ(1 / 7), QQ(1 / 10),
-                       QQ(1 / 5), QQ(1 / 2), QQ(1 / 4), QQ(1 / 4), QQ(1 / 9), QQ(1 / 6)]
-    G = build_graph(counter_example)
-    print(G.vertices())
+    weights = [1/10, 1/10, 1/4, 1/3, 1/2, 1]
+    G = build_graph(weights)
+    print(G.vertices(), G.edges())
+    K = build_complex(weights)
+    print(K.faces())
+    G.plot().show()
+
+    aut_G = G.automorphism_group()
+    aut_K = K.automorphism_group()
+
+    are_isomorphic = aut_G.is_isomorphic(aut_K)
+    print(are_isomorphic)   
