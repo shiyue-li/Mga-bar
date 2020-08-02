@@ -1,95 +1,104 @@
-import sage.all
 from sage.all import *
 
 import itertools
 
 
-def powerset(iterable):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    s = list(iterable)
-    return itertools.chain.from_iterable(itertools.combinations(s, r)
-                                         for r in range(len(s) + 1))
+def powerset(num_elts):
+    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
+    s = list(range(num_elts))
+    return itertools.chain.from_iterable(itertools.combinations(s, k)
+                                         for k in range(num_elts + 1))
 
 
-def sum_weighted(subset, weights):
-    return sum(weights[i] for i in subset)
+def sum_weighted(subset, vec_wt):
+    return sum(vec_wt[k] for k in subset)
 
 
-def get_complement(subset, n):
-    return tuple(sorted(set(range(n)) - set(subset)))
+def get_complement(subset, num_elts):
+    return tuple(sorted(set(range(num_elts)) - set(subset)))
 
 
-def is_valid_subset(subset, weights):
-    complement = get_complement(subset, len(weights))
+def is_stable(subset, vec_wt):
+    complement = get_complement(subset, len(vec_wt))
 
-    sum_subset = sum_weighted(subset, weights)
-    sum_complement = sum_weighted(complement, weights)
+    sum_subset = sum_weighted(subset, vec_wt)
+    sum_complement = sum_weighted(complement, vec_wt)
 
-    return sum_subset > 1 and sum_complement > 1 and subset < complement
-
-
-def _get_vertices(weights):
-    n = len(weights)
-
-    return [subset for subset in powerset(range(n))
-            if is_valid_subset(subset, weights)]
+    return sum_subset > 1 and sum_complement > 1
 
 
-def are_connected(subset1, subset2, n):
-    # edges: S ~ T iff S < T or S < T^c or T < S or T^c < S
-
-    S = set(subset1)
-    S_comp = set(get_complement(subset1, n))
-    T = set(subset2)
-    T_comp = set(get_complement(subset2, n))
-
-    return any((S < T, S < T_comp, T_comp < S, T < S))
+def _get_vertices(vec_wt):
+    return [subset for subset in powerset(len(vec_wt))
+            if is_stable(subset, vec_wt)]
 
 
-def build_graph(weights):
-    vertices = _get_vertices(weights)
+def are_connected(subset1, subset2, num_wts):
+    s = set(subset1)
+    t = set(subset2)
+    t_comp = set(get_complement(subset2, num_wts))
 
-    return Graph({subset1: [subset2 for subset2 in vertices
-                            if are_connected(subset1, subset2, len(weights))]
-                  for subset1 in vertices})
+    return any((s < t, s < t_comp, t_comp < s, t < s))
 
 
-def build_complex(weights):
+def build_graph(vec_wt):
+    return Graph({subset1: neighbors(subset1, vec_wt)
+                  for subset1 in _get_vertices(vec_wt)
+                  if subset1 < get_complement(subset1, len(vec_wt))})
+
+
+def neighbors(subset, vec_wt):
+    return [other for other in _get_vertices(vec_wt)
+            if are_connected(subset, other, len(vec_wt))
+            and other < get_complement(other, len(vec_wt))]
+
+
+def build_complex(vec_wts):
     return SimplicialComplex([tuple(subset)
-                              for subset in powerset(range(len(weights)))
-                              if sum_weighted(subset, weights) <= 1])
+                              for subset in powerset(len(vec_wts))
+                              if sum_weighted(subset, vec_wts) <= 1])
 
 
-def generate_random_vector(n):
+def generate_random_vector(num_wts):
     vector = []
-    while len(vector) < n:
+    while len(vector) < num_wts:
         rand_rat = abs(QQ.random_element(1, 10))
         if rand_rat != 0:
             vector.append(rand_rat)
-    return sorted(vector) if sum(vector) > 2 else generate_random_vector(n)
+    return sorted(vector) if sum(vector) > 2 else generate_random_vector(num_wts)
 
 
-def compare_automorphism_groups(n):
-    for i in range(30):
-        weights = generate_random_vector(n)
+def generate_weights_two_ones(num_wts: int) -> list:
+    two_ones = [1, 1]
+    while len(two_ones) < num_wts:
+        rand_rat = abs(QQ.random_element(10))
+        if 0 < rand_rat < 1:
+            two_ones.append(rand_rat)
+    return sorted(two_ones)
 
-        G = build_graph(weights)
-        aut_graph = G.automorphism_group()
 
-        K = build_complex(weights)
-        aut_complex = K.automorphism_group()
+def compare_automorphism_groups(num_wts):
+    for _ in range(30):
+        weights_two_ones = generate_weights_two_ones(num_wts)
 
-        if G.size() > 0 and not aut_graph.is_isomorphic(aut_complex):
-            return weights
+        g = build_graph(weights_two_ones)
+        aut_graph = g.automorphism_group()
 
-    print(f"All clear for n={n}")
+        k = build_complex(weights_two_ones)
+        aut_complex = k.automorphism_group()
+        print(k.faces())
+
+        if g.size() > 0 and not aut_graph.is_isomorphic(aut_complex):
+            return weights_two_ones
+
+    print(f"All clear for n={num_wts}")
+
 
 if __name__ == "__main__":
-    weights = [1 / 10, 1 / 10, 1 / 4, 1 / 3, 1 / 2, 1]
+    weights = [1 / 10, 1 / 4, 1 / 3, 1 / 2, 1, 1]
     G = build_graph(weights)
+    print(G.vertices())
     K = build_complex(weights)
-
-    print(G.edges())
+    print(K)
 
     aut_G = G.automorphism_group()
     aut_K = K.automorphism_group()
