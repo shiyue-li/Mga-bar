@@ -18,6 +18,14 @@ def get_complement(subset, num_elts):
     return tuple(sorted(set(range(num_elts)) - set(subset)))
 
 
+def is_representative(subset, vec_wt):
+    complement = get_complement(subset, len(vec_wt))
+
+    if len(subset) < len(complement):
+        return True
+    return len(subset) == len(complement) and subset < complement
+
+
 def is_stable(subset, vec_wt):
     complement = get_complement(subset, len(vec_wt))
 
@@ -27,9 +35,20 @@ def is_stable(subset, vec_wt):
     return sum_subset > 1 and sum_complement > 1
 
 
+def build_graph(vec_wt):
+    return Graph({subset1: neighbors(subset1, vec_wt)
+                  for subset1 in _get_vertices(vec_wt)})
+
+
+def neighbors(subset, vec_wt):
+    return [other for other in _get_vertices(vec_wt)
+            if are_connected(subset, other, len(vec_wt))]
+
+
 def _get_vertices(vec_wt):
     return [subset for subset in powerset(len(vec_wt))
-            if is_stable(subset, vec_wt)]
+            if is_stable(subset, vec_wt)
+            and is_representative(subset, vec_wt)]
 
 
 def are_connected(subset1, subset2, num_wts):
@@ -38,18 +57,6 @@ def are_connected(subset1, subset2, num_wts):
     t_comp = set(get_complement(subset2, num_wts))
 
     return any((s < t, s < t_comp, t_comp < s, t < s))
-
-
-def build_graph(vec_wt):
-    return Graph({subset1: neighbors(subset1, vec_wt)
-                  for subset1 in _get_vertices(vec_wt)
-                  if subset1 < get_complement(subset1, len(vec_wt))})
-
-
-def neighbors(subset, vec_wt):
-    return [other for other in _get_vertices(vec_wt)
-            if are_connected(subset, other, len(vec_wt))
-            and other < get_complement(other, len(vec_wt))]
 
 
 def build_complex(vec_wts):
@@ -76,6 +83,23 @@ def generate_weights_two_ones(num_wts: int) -> list:
     return sorted(two_ones)
 
 
+def generate_heavy_light(num_heavy, num_light):
+    denom = (num_light + 1)
+
+    return [1 / denom] * num_light + [1] * num_heavy
+
+
+def get_core(graph, vec_wts):
+    core_vertices = [vertex for vertex in graph.vertices()
+                     if len(vertex) == 2
+                     and vec_wts[vertex[0]] < 1 and vec_wts[vertex[1]] == 1]
+
+    core_subgraph = graph.subgraph(core_vertices)
+    assert core_subgraph.is_subgraph(graph)
+
+    return core_subgraph
+
+
 def compare_automorphism_groups(num_wts):
     for _ in range(30):
         weights_two_ones = generate_weights_two_ones(num_wts)
@@ -85,23 +109,8 @@ def compare_automorphism_groups(num_wts):
 
         k = build_complex(weights_two_ones)
         aut_complex = k.automorphism_group()
-        print(k.faces())
 
         if g.size() > 0 and not aut_graph.is_isomorphic(aut_complex):
             return weights_two_ones
 
     print(f"All clear for n={num_wts}")
-
-
-if __name__ == "__main__":
-    weights = [1 / 10, 1 / 4, 1 / 3, 1 / 2, 1, 1]
-    G = build_graph(weights)
-    print(G.vertices())
-    K = build_complex(weights)
-    print(K)
-
-    aut_G = G.automorphism_group()
-    aut_K = K.automorphism_group()
-
-    are_isomorphic = aut_G.is_isomorphic(aut_K)
-    print(are_isomorphic)
